@@ -26,18 +26,23 @@ app.post("/ask-jiji", async (req, res) => {
       return res.status(400).json({ error: "Query is required" });
     }
 
-    // simple topic detection (mock)
-    const topic = "RAG";
+    const topic = query.split(" ").pop(); // last word as topic
 
-   const { data, error } = await supabase
-  .from("resources")
-  .select("*");
-
+    const { data, error } = await supabase
+      .from("resources")
+      .select("*")
+      .ilike("topic", `%${topic}%`);
 
     if (error) throw error;
 
-    const answer =
-      "Retrieval-Augmented Generation (RAG) combines retrieval systems with language models to improve response accuracy.";
+    if (!data || data.length === 0) {
+      return res.json({
+        message: "No resources available for this topic.",
+        resources: [],
+      });
+    }
+
+    const answer = `Here are learning resources related to ${topic}.`;
 
     res.json({
       answer,
@@ -45,9 +50,10 @@ app.post("/ask-jiji", async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: "Server error is there" });
   }
 });
+
 
 app.listen(process.env.PORT || 5000, () => {
   console.log("Server running...");
